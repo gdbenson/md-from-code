@@ -216,9 +216,9 @@ def _process_files(
                 if single_file:
                     output_file = output_path
                 elif use_output_dir:
-                    output_file = output_path / f"{input_path.stem}.md"
+                    output_file = output_path / f"{input_path.name}.md"
                 else:
-                    output_file = input_path.parent / f"{input_path.stem}.md"
+                    output_file = input_path.parent / f"{input_path.name}.md"
 
                 # Generate markdown
                 if validate_only:
