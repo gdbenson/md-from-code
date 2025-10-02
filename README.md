@@ -18,19 +18,34 @@ Convert source code files to MkDocs-compatible markdown pages with syntax highli
 ### Using UV (Recommended)
 
 ```bash
-# Install from source
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install as a tool
+uv tool install md-from-code
+
+# Install from GitHub
+uv tool install git+https://github.com/mams-migration/md-from-code
+
+# Development install
 git clone <repository-url>
 cd md-from-code
-uv install .
-
-# Install in development mode
-uv install -e ".[dev]"
+uv tool install -e .
 ```
 
 ### Using pip
 
 ```bash
 pip install md-from-code
+
+# Install from GitHub
+pip install git+https://github.com/mams-migration/md-from-code
+```
+
+### Using pipx
+
+```bash
+pipx install md-from-code
 ```
 
 ## Quick Start
@@ -273,7 +288,7 @@ Create a `.md-from-code.json` configuration file:
 ```bash
 git clone <repository-url>
 cd md-from-code
-uv install -e ".[dev]"
+uv tool install -e .
 ```
 
 ### Running Tests
