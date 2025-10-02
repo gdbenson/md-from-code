@@ -1,0 +1,145 @@
+---
+{% for key, value in frontmatter.items() -%}
+{% if value is iterable and value is not string -%}
+{{ key }}:
+{% for item in value -%}
+  - {{ item }}
+{% endfor %}
+{% else -%}
+{{ key }}: {{ value }}
+{% endif %}
+{% endfor -%}
+---
+
+# {{ title }}
+
+{% if include_metadata and processed_data.get('error') %}
+!!! error "File Processing Error"
+    {{ processed_data.error }}
+
+{% if processed_data.encoding != 'unknown' %}
+**File encoding detected:** {{ processed_data.encoding }}
+{% endif %}
+
+{% elif include_metadata %}
+<div class="file-header">
+  <div class="file-info">
+    <span class="file-type-indicator file-type-{{ type_info.highlight_lang }}">{{ type_info.icon }}</span>
+    <span class="file-name">{{ file_name }}</span>
+    <span class="file-tag {{ type_info.highlight_lang }}">{{ type_info.name }}</span>
+    <div class="file-meta">
+      <span>Size: {{ processed_data.file_size_human }}</span>
+      {% if processed_data.line_stats -%}
+      <span>Lines: {{ processed_data.line_stats.total_lines }}</span>
+      {% endif -%}
+      {% if processed_data.encoding -%}
+      <span>Encoding: {{ processed_data.encoding }}</span>
+      {% endif -%}
+    </div>
+  </div>
+  <div class="file-actions">
+    <a href="{{ file_name }}" class="download-btn" download>
+      📥 Download
+    </a>
+    <button class="copy-btn" onclick="copyToClipboard()">
+      📋 Copy
+    </button>
+  </div>
+</div>
+
+{% endif %}
+
+{% if description %}
+## Overview
+
+{{ description }}
+
+{% if processed_data.get('is_valid') == False and processed_data.get('parsing_error') %}
+!!! warning "File Validation"
+    This file contains syntax errors: {{ processed_data.parsing_error }}
+{% endif %}
+
+{% endif %}
+
+{% if include_stats and processed_data.get('language_stats') %}
+## Code Statistics
+
+<div class="stats-grid">
+{% if processed_data.language_stats.function_definitions > 0 -%}
+- **Functions:** {{ processed_data.language_stats.function_definitions }}
+{% endif -%}
+{% if processed_data.language_stats.class_definitions > 0 -%}
+- **Classes:** {{ processed_data.language_stats.class_definitions }}
+{% endif -%}
+{% if processed_data.language_stats.import_statements > 0 -%}
+- **Imports:** {{ processed_data.language_stats.import_statements }}
+{% endif -%}
+{% if processed_data.language_stats.comment_lines > 0 -%}
+- **Comment Lines:** {{ processed_data.language_stats.comment_lines }} ({{ processed_data.language_stats.comment_percentage }}%)
+{% endif -%}
+</div>
+
+{% elif include_stats and processed_data.get('structure_info') %}
+## Structure Information
+
+{% set struct = processed_data.structure_info -%}
+{% if struct.format -%}
+**Format:** {{ struct.format }}
+
+{% endif -%}
+{% if struct.type -%}
+**Type:** {{ struct.type }}
+
+{% endif -%}
+{% if struct.get('keys') -%}
+**Keys:** {{ struct.keys }}
+
+{% endif -%}
+{% if struct.get('length') -%}
+**Length:** {{ struct.length }}
+
+{% endif -%}
+{% if struct.get('max_depth') -%}
+**Max Depth:** {{ struct.max_depth }}
+
+{% endif -%}
+{% if struct.get('total_elements') -%}
+**Total Elements:** {{ struct.total_elements }}
+
+{% endif -%}
+{% if struct.get('document_count') -%}
+**Documents:** {{ struct.document_count }}
+
+{% endif -%}
+{% if struct.get('section_count') -%}
+**Sections:** {{ struct.section_count }}
+
+{% endif -%}
+{% endif %}
+
+{% if processed_data.get('was_truncated') %}
+!!! info "Content Truncated"
+    This file was truncated at line {{ processed_data.truncated_at_line }} for display purposes.
+    {% if processed_data.original_content_length -%}
+    Original file size: {{ processed_data.original_content_length }} characters.
+    {% endif -%}
+    Download the file to view the complete content.
+
+{% endif %}
+
+## Source Code
+
+{% if processed_data.content -%}
+```{{ type_info.highlight_lang }}{% if linenums %} linenums="1"{% endif %} title="{{ file_name }}"
+{{ processed_data.content }}
+```
+{% else -%}
+*No content available or file could not be processed.*
+{% endif %}
+
+{% if include_metadata and processed_data.get('modified_human') %}
+---
+
+*Last modified: {{ processed_data.modified_human }}*
+*Generated with [md-from-code](https://github.com/mams-migration/md-from-code) on {{ generation_timestamp[:19] }}*
+{% endif %}
