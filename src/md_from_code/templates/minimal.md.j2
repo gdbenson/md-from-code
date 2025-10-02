@@ -1,0 +1,27 @@
+---
+{% for key, value in frontmatter.items() -%}
+{% if value is iterable and value is not string -%}
+{{ key }}:
+{% for item in value -%}
+  - {{ item }}
+{% endfor %}
+{% else -%}
+{{ key }}: {{ value }}
+{% endif %}
+{% endfor -%}
+---
+
+# {{ title }}
+
+{% if processed_data.get('error') %}
+**Error:** {{ processed_data.error }}
+
+{% endif %}
+
+{% if processed_data.content -%}
+```{{ type_info.highlight_lang }}{% if linenums %} linenums="1"{% endif %}
+{{ processed_data.content }}
+```
+{% else -%}
+*No content available.*
+{% endif %}

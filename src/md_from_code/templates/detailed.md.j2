@@ -1,0 +1,221 @@
+---
+{% for key, value in frontmatter.items() -%}
+{% if value is iterable and value is not string -%}
+{{ key }}:
+{% for item in value -%}
+  - {{ item }}
+{% endfor %}
+{% else -%}
+{{ key }}: {{ value }}
+{% endif %}
+{% endfor -%}
+---
+
+# {{ title }}
+
+{% if processed_data.get('error') %}
+!!! error "File Processing Error"
+    {{ processed_data.error }}
+
+    {% if processed_data.encoding != 'unknown' %}
+    **Detected encoding:** {{ processed_data.encoding }}
+    {% endif %}
+
+    Please check the file format and try again.
+{% else %}
+
+## File Information
+
+<div class="file-header-detailed">
+  <div class="file-primary-info">
+    <div class="file-icon">{{ type_info.icon }}</div>
+    <div class="file-details">
+      <h3>{{ file_name }}</h3>
+      <p class="file-description">{{ type_info.description or description }}</p>
+      <div class="file-badges">
+        <span class="badge badge-type">{{ type_info.name }}</span>
+        {% if processed_data.get('is_valid') == True -%}
+        <span class="badge badge-valid">✓ Valid</span>
+        {% elif processed_data.get('is_valid') == False -%}
+        <span class="badge badge-invalid">✗ Invalid</span>
+        {% endif -%}
+        <span class="badge badge-processor">{{ type_info.processor_type.title() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-actions">
+    <a href="{{ file_name }}" class="btn-download" download>
+      📥 Download Original
+    </a>
+    <button class="btn-copy" onclick="copyToClipboard()">
+      📋 Copy Code
+    </button>
+  </div>
+</div>
+
+## Metadata
+
+| Property | Value |
+|----------|--------|
+| **File Name** | `{{ processed_data.file_name }}` |
+{% if processed_data.get('file_size_human') -%}
+| **File Size** | {{ processed_data.file_size_human }} |
+{% endif -%}
+{% if processed_data.get('encoding') -%}
+| **Encoding** | {{ processed_data.encoding }} |
+{% endif -%}
+{% if processed_data.get('modified_human') -%}
+| **Last Modified** | {{ processed_data.modified_human }} |
+{% endif -%}
+{% if processed_data.get('permissions') -%}
+| **Permissions** | `{{ processed_data.permissions }}` |
+{% endif -%}
+| **Extension** | `{{ processed_data.extension }}` |
+| **Format** | {{ type_info.name }} |
+| **MIME Type** | {{ type_info.mime_type or 'Unknown' }} |
+
+{% if processed_data.get('line_stats') %}
+### Line Statistics
+
+| Metric | Count |
+|--------|-------|
+| **Total Lines** | {{ processed_data.line_stats.total_lines }} |
+| **Non-blank Lines** | {{ processed_data.line_stats.non_blank_lines }} |
+| **Blank Lines** | {{ processed_data.line_stats.blank_lines }} |
+
+{% endif %}
+
+{% if processed_data.get('language_stats') %}
+### Code Analysis
+
+{% set stats = processed_data.language_stats -%}
+| Metric | Count | Percentage |
+|--------|-------|------------|
+{% if stats.function_definitions > 0 -%}
+| **Functions** | {{ stats.function_definitions }} | - |
+{% endif -%}
+{% if stats.class_definitions > 0 -%}
+| **Classes** | {{ stats.class_definitions }} | - |
+{% endif -%}
+{% if stats.import_statements > 0 -%}
+| **Import Statements** | {{ stats.import_statements }} | - |
+{% endif -%}
+{% if stats.comment_lines > 0 -%}
+| **Comment Lines** | {{ stats.comment_lines }} | {{ stats.comment_percentage }}% |
+{% endif -%}
+{% if stats.docstring_blocks > 0 -%}
+| **Docstrings** | {{ stats.docstring_blocks }} | - |
+{% endif -%}
+
+{% endif %}
+
+{% if processed_data.get('structure_info') %}
+### Structure Analysis
+
+{% set struct = processed_data.structure_info -%}
+{% if struct.get('format') -%}
+**Data Format:** {{ struct.format }}
+
+{% endif -%}
+{% if struct.get('type') -%}
+**Structure Type:** {{ struct.type }}
+
+{% endif -%}
+
+| Property | Value |
+|----------|--------|
+{% if struct.get('keys') -%}
+| **Object Keys** | {{ struct.keys }} |
+{% endif -%}
+{% if struct.get('length') -%}
+| **Array Length** | {{ struct.length }} |
+{% endif -%}
+{% if struct.get('max_depth') -%}
+| **Maximum Depth** | {{ struct.max_depth }} |
+{% endif -%}
+{% if struct.get('total_elements') -%}
+| **Total Elements** | {{ struct.total_elements }} |
+{% endif -%}
+{% if struct.get('document_count') -%}
+| **Documents** | {{ struct.document_count }} |
+{% endif -%}
+{% if struct.get('section_count') -%}
+| **Configuration Sections** | {{ struct.section_count }} |
+{% endif -%}
+{% if struct.get('total_options') -%}
+| **Configuration Options** | {{ struct.total_options }} |
+{% endif -%}
+
+{% if struct.get('top_level_keys') -%}
+#### Top-Level Keys
+{% for key in struct.top_level_keys -%}
+- `{{ key }}`
+{% endfor %}
+
+{% endif -%}
+
+{% if struct.get('sections') -%}
+#### Configuration Sections
+{% for section in struct.sections -%}
+- `[{{ section }}]`
+{% endfor %}
+
+{% endif -%}
+
+{% if struct.get('namespaces') and struct.namespaces -%}
+#### XML Namespaces
+{% for prefix, uri in struct.namespaces.items() -%}
+- `{{ prefix }}`: `{{ uri }}`
+{% endfor %}
+
+{% endif -%}
+{% endif %}
+
+{% if processed_data.get('is_valid') == False and processed_data.get('parsing_error') %}
+### Validation Issues
+
+!!! warning "Syntax Errors Detected"
+    {{ processed_data.parsing_error }}
+
+    The file contains syntax errors that may prevent proper processing.
+    Please review and correct the issues before use.
+
+{% endif %}
+
+{% if processed_data.get('was_truncated') %}
+!!! info "Content Display Limit"
+    This file has been truncated at line {{ processed_data.truncated_at_line }} for display purposes.
+
+    - **Original size:** {{ processed_data.original_content_length }} characters
+    - **Displayed size:** {{ processed_data.processed_content_length }} characters
+
+    Download the complete file using the button above.
+
+{% endif %}
+
+{% endif %}
+
+## Source Code
+
+{% if processed_data.content -%}
+```{{ type_info.highlight_lang }}{% if linenums %} linenums="1"{% endif %} title="{{ file_name }}"
+{{ processed_data.content }}
+```
+{% else -%}
+!!! note "No Content"
+    No content is available for display. This may be due to:
+
+    - File processing errors
+    - Empty file
+    - Unsupported encoding
+    - File access restrictions
+
+{% endif %}
+
+---
+
+<div class="generation-info">
+  Generated with <a href="https://github.com/mams-migration/md-from-code">md-from-code</a>
+  on {{ generation_timestamp[:19] }}
+</div>
