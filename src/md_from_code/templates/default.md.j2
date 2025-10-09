@@ -1,17 +1,4 @@
----
-{% for key, value in frontmatter.items() -%}
-{% if value is iterable and value is not string -%}
-{{ key }}:
-{% for item in value -%}
-  - {{ item }}
-{% endfor %}
-{% else -%}
-{{ key }}: {{ value }}
-{% endif %}
-{% endfor -%}
----
-
-# {{ title }}
+# {{ file_name }}
 
 {% if include_metadata and processed_data.get('error') %}
 !!! error "File Processing Error"
@@ -61,62 +48,6 @@
 
 {% endif %}
 
-{% if include_stats and processed_data.get('language_stats') %}
-## Code Statistics
-
-<div class="stats-grid">
-{% if processed_data.language_stats.function_definitions > 0 -%}
-- **Functions:** {{ processed_data.language_stats.function_definitions }}
-{% endif -%}
-{% if processed_data.language_stats.class_definitions > 0 -%}
-- **Classes:** {{ processed_data.language_stats.class_definitions }}
-{% endif -%}
-{% if processed_data.language_stats.import_statements > 0 -%}
-- **Imports:** {{ processed_data.language_stats.import_statements }}
-{% endif -%}
-{% if processed_data.language_stats.comment_lines > 0 -%}
-- **Comment Lines:** {{ processed_data.language_stats.comment_lines }} ({{ processed_data.language_stats.comment_percentage }}%)
-{% endif -%}
-</div>
-
-{% elif include_stats and processed_data.get('structure_info') %}
-## Structure Information
-
-{% set struct = processed_data.structure_info -%}
-{% if struct.format -%}
-**Format:** {{ struct.format }}
-
-{% endif -%}
-{% if struct.type -%}
-**Type:** {{ struct.type }}
-
-{% endif -%}
-{% if struct.get('keys') -%}
-**Keys:** {{ struct.keys }}
-
-{% endif -%}
-{% if struct.get('length') -%}
-**Length:** {{ struct.length }}
-
-{% endif -%}
-{% if struct.get('max_depth') -%}
-**Max Depth:** {{ struct.max_depth }}
-
-{% endif -%}
-{% if struct.get('total_elements') -%}
-**Total Elements:** {{ struct.total_elements }}
-
-{% endif -%}
-{% if struct.get('document_count') -%}
-**Documents:** {{ struct.document_count }}
-
-{% endif -%}
-{% if struct.get('section_count') -%}
-**Sections:** {{ struct.section_count }}
-
-{% endif -%}
-{% endif %}
-
 {% if processed_data.get('was_truncated') %}
 !!! info "Content Truncated"
     This file was truncated at line {{ processed_data.truncated_at_line }} for display purposes.
@@ -130,7 +61,7 @@
 ## Source Code
 
 {% if processed_data.content -%}
-```{{ type_info.highlight_lang }}{% if linenums %} linenums="1"{% endif %} title="{{ file_name }}"
+```{{ type_info.highlight_lang }} linenums="1" title="{{ file_name }}"
 {{ processed_data.content }}
 ```
 {% else -%}
