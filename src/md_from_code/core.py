@@ -125,6 +125,7 @@ class MarkdownGenerator:
             'include_metadata': kwargs.get('include_metadata', True),
             'include_stats': kwargs.get('include_stats', True),
             'include_toc': kwargs.get('include_toc', True),
+            'linenums': kwargs.get('linenums', True),
             'custom_css_classes': kwargs.get('custom_css_classes', []),
         })
 

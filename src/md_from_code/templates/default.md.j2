@@ -61,7 +61,7 @@
 ## Source Code
 
 {% if processed_data.content -%}
-```{{ type_info.highlight_lang }} linenums="1" title="{{ file_name }}"
+```{{ type_info.highlight_lang }}{% if linenums %} linenums="1"{% endif %} title="{{ file_name }}"
 {{ processed_data.content }}
 ```
 {% else -%}

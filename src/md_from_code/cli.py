@@ -34,7 +34,7 @@ console = Console()
 @click.option('--no-metadata', is_flag=True, help='Exclude file metadata from output')
 @click.option('--no-stats', is_flag=True, help='Exclude code/structure statistics from output')
 @click.option('--no-toc', is_flag=True, help='Exclude table of contents from output')
-@click.option('--line-numbers', is_flag=True, help='Include line numbers in code blocks (via linenums)')
+@click.option('--no-line-numbers', is_flag=True, help='Exclude line numbers from code blocks')
 @click.option('--frontmatter', help='Additional YAML frontmatter as JSON string')
 @click.option('--list-formats', is_flag=True, help='List all supported file formats and exit')
 @click.option('--validate-only', is_flag=True, help='Only validate files without generating output')
@@ -57,7 +57,7 @@ def main(
     no_metadata: bool,
     no_stats: bool,
     no_toc: bool,
-    line_numbers: bool,
+    no_line_numbers: bool,
     frontmatter: Optional[str],
     list_formats: bool,
     validate_only: bool,
@@ -88,7 +88,7 @@ def main(
         _process_files(
             generator, input_paths, output, output_dir, format_override,
             template, title, description, tags, max_lines, encoding, indent,
-            no_metadata, no_stats, no_toc, line_numbers, frontmatter,
+            no_metadata, no_stats, no_toc, no_line_numbers, frontmatter,
             validate_only, quiet, verbose
         )
 
@@ -149,7 +149,7 @@ def _process_files(
     no_metadata: bool,
     no_stats: bool,
     no_toc: bool,
-    line_numbers: bool,
+    no_line_numbers: bool,
     frontmatter: Optional[str],
     validate_only: bool,
     quiet: bool,
@@ -180,12 +180,9 @@ def _process_files(
         'include_metadata': not no_metadata,
         'include_stats': not no_stats,
         'include_toc': not no_toc,
+        'linenums': not no_line_numbers,
         'frontmatter': frontmatter_dict,
     }
-
-    # Add line numbers option if supported by template
-    if line_numbers:
-        kwargs['linenums'] = True
 
     # Determine output strategy
     single_file = len(input_paths) == 1 and output and not output_dir
