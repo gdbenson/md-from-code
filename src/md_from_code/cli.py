@@ -5,6 +5,7 @@ Command-line interface for md-from-code.
 import sys
 from pathlib import Path
 from typing import List, Optional
+from fnmatch import fnmatch
 import click
 from rich.console import Console
 from rich.progress import Progress, TaskID
@@ -21,6 +22,8 @@ console = Console()
 @click.argument('input_files', nargs=-1, required=True, type=click.Path(exists=True))
 @click.option('-o', '--output', help='Output file (for single input) or directory (for multiple inputs)')
 @click.option('--output-dir', help='Output directory for all files')
+@click.option('-r', '--recursive', is_flag=True, help='Recursively discover files in directories')
+@click.option('--exclude', default='*.md', help='Comma-separated patterns to exclude (default: *.md when using --recursive)')
 @click.option('--format', 'format_override', help='Override file format detection (e.g., json, xml, yaml)')
 @click.option('--template', help='Custom Jinja2 template file')
 @click.option('--template-dir', help='Directory containing custom templates')
@@ -44,6 +47,8 @@ def main(
     input_files: tuple[str, ...],
     output: Optional[str],
     output_dir: Optional[str],
+    recursive: bool,
+    exclude: str,
     format_override: Optional[str],
     template: Optional[str],
     template_dir: Optional[str],
@@ -67,7 +72,8 @@ def main(
     """
     Convert source code files to MkDocs-compatible markdown pages.
 
-    INPUT_FILES can be one or more file paths or glob patterns.
+    INPUT_FILES can be one or more file paths, glob patterns, or directories.
+    Use --recursive to process all files in directories recursively.
     """
     try:
         # Handle special commands first
@@ -86,10 +92,10 @@ def main(
         # Process files
         input_paths = [Path(f) for f in input_files]
         _process_files(
-            generator, input_paths, output, output_dir, format_override,
-            template, title, description, tags, max_lines, encoding, indent,
-            no_metadata, no_stats, no_toc, no_line_numbers, frontmatter,
-            validate_only, quiet, verbose
+            generator, input_paths, output, output_dir, recursive, exclude,
+            format_override, template, title, description, tags, max_lines,
+            encoding, indent, no_metadata, no_stats, no_toc, no_line_numbers,
+            frontmatter, validate_only, quiet, verbose
         )
 
     except KeyboardInterrupt:
@@ -100,6 +106,75 @@ def main(
         if verbose:
             console.print_exception()
         sys.exit(1)
+
+
+def _discover_files(
+    input_paths: List[Path],
+    recursive: bool,
+    exclude_patterns: List[str],
+    verbose: bool = False
+) -> List[Path]:
+    """
+    Discover files from input paths, applying recursive search and exclusions.
+
+    Args:
+        input_paths: List of file or directory paths
+        recursive: Whether to recursively search directories
+        exclude_patterns: List of patterns to exclude (e.g., ['*.md', '*.pyc'])
+        verbose: Enable verbose output
+
+    Returns:
+        List of discovered file paths
+    """
+    discovered_files = []
+
+    for input_path in input_paths:
+        if input_path.is_file():
+            # Single file - check if it matches exclusion patterns
+            if not _should_exclude(input_path, exclude_patterns):
+                discovered_files.append(input_path)
+            elif verbose:
+                console.print(f"[yellow]Excluded:[/yellow] {input_path}")
+
+        elif input_path.is_dir():
+            if recursive:
+                # Recursively walk directory
+                for file_path in input_path.rglob('*'):
+                    if file_path.is_file() and not _should_exclude(file_path, exclude_patterns):
+                        discovered_files.append(file_path)
+                    elif verbose and file_path.is_file():
+                        console.print(f"[yellow]Excluded:[/yellow] {file_path}")
+            else:
+                # Only process files directly in the directory
+                for file_path in input_path.iterdir():
+                    if file_path.is_file() and not _should_exclude(file_path, exclude_patterns):
+                        discovered_files.append(file_path)
+                    elif verbose and file_path.is_file():
+                        console.print(f"[yellow]Excluded:[/yellow] {file_path}")
+
+    return discovered_files
+
+
+def _should_exclude(file_path: Path, exclude_patterns: List[str]) -> bool:
+    """
+    Check if a file should be excluded based on patterns.
+
+    Args:
+        file_path: Path to check
+        exclude_patterns: List of patterns to match against
+
+    Returns:
+        True if file should be excluded, False otherwise
+    """
+    file_name = file_path.name
+    file_relative = str(file_path)
+
+    for pattern in exclude_patterns:
+        # Match against filename and full path
+        if fnmatch(file_name, pattern) or fnmatch(file_relative, pattern):
+            return True
+
+    return False
 
 
 def _list_supported_formats() -> None:
@@ -138,6 +213,8 @@ def _process_files(
     input_paths: List[Path],
     output: Optional[str],
     output_dir: Optional[str],
+    recursive: bool,
+    exclude: str,
     format_override: Optional[str],
     template: Optional[str],
     title: Optional[str],
@@ -156,6 +233,24 @@ def _process_files(
     verbose: bool,
 ) -> None:
     """Process input files and generate markdown."""
+
+    # Parse exclude patterns
+    exclude_patterns = [p.strip() for p in exclude.split(',') if p.strip()] if exclude else []
+
+    # Discover files if recursive mode is enabled or if we have directories
+    has_directories = any(p.is_dir() for p in input_paths)
+    if recursive or has_directories:
+        if not quiet and verbose:
+            console.print(f"[cyan]Discovering files (recursive={recursive})...[/cyan]")
+        input_paths = _discover_files(input_paths, recursive, exclude_patterns, verbose)
+        if not quiet:
+            console.print(f"[cyan]Found {len(input_paths)} file(s) to process[/cyan]")
+
+    # If no files found, exit early
+    if not input_paths:
+        if not quiet:
+            console.print("[yellow]No files found to process[/yellow]")
+        return
 
     # Parse additional options
     tag_list = [tag.strip() for tag in tags.split(',')] if tags else None
